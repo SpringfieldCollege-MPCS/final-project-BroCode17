@@ -35,10 +35,23 @@ def validate(email, password):
     #             break
     return False
 
+"""
+This function set all users login to False because,
+the user might close the terminal instead of login 
+"""
+def default_login_out():
+    all_users = db.get_users()
+    for user  in all_users:
+        # set user login to false
+        user.login = False
+        # Update db
+        db.update_user(user)
+# end of function
 
 def user_login():
     email = input("Enter your email: ")
     password = input("Enter your password: ")
+    global_user = None
     if not validate(email, password):
         i = 0
         while i < 4:
@@ -52,9 +65,15 @@ def user_login():
 
     if validate(email, password):
         # client.main()
+        # Set global user the client user
+        global_user = db.get_entity_by_email(User, email)
+        # set login to true
+        global_user.login = True
+        # Persist t to db
+        db.update_user(global_user)
         while True:
-            print("1. Create Conversation:\n2. View and Join\n3. quit")
-            user_ans = input("Enter choose: ")
+            print("1. Create Conversation:\n2. View and Join\n3. Logout\n4: Quit")
+            user_ans = input("Enter #: ")
             if user_ans == '1':
                 conv_name = input("Enter conversation name: ")
                 db.create_conversation(conv_name)
@@ -93,9 +112,18 @@ def user_login():
                 #     print(f"{m.from_email}:{m.sent_date}-> {m.message_text}")
                 # Starting the client function
                 c2.start(get_conv_id.id, email)
-
-            else:
+            elif user_ans == '3' or user_ans == 'logout' or user_ans == 'Logout':
+                # Logout the user
+                global_user.login = False
+                # Update db
+                db.update_user(global_user)
+                #Your logged out
+                print("You logged out <-> See your soon")
+                # send the user back to login page
+                user_login()
+            elif user_ans == '4' or user_ans == 'quit' or user_ans == 'Quit':
                 exit(0)
+        # end of while loop
     else:
         print(f"Try again next time")
         exit(0)
@@ -109,18 +137,23 @@ def user_login():
 #     return None
 
 
-# def forgot():
-#     email = input("Enter your email: ")
-#     u = find_user(email)
-#     if u != None:
-#         new_password = input("Enter new password: ")
-#         if new_password != '':
-#             u['password'] = new_password
-#     user_login()
+def forgot():
+    email = input("Enter your email: ")
+    us = db.get_entity_by_email(User, email)
+    if us.email == email:
+        if us!= None:
+            new_password = input("Enter new password: ")
+            if new_password != '':
+                us.password = new_password
+                db.update_user(us)
+                print("Password updated Successfully")
+    else :
+        print("User does not exist")
+    user_login()
 
 
 def select():
-    print("1 login: \n2. Register: \n3. Forget Password: ")
+    print("1 login: \n2. Register: \n3. Forget Password: \n4. Quit")
     option = input("Choose: ")
     if option == 'login' or option == '1':
         user_login()
@@ -128,8 +161,10 @@ def select():
         create_user()
         user_login()
     elif option == 'Forget Password' or option == '3':
-        # forgot()
-        print("Forgot")
+        forgot()
+    else:
+        exit(0)
+
 # create_user()
 # # create_user()
 # user_login()

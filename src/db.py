@@ -140,6 +140,11 @@ def get_messages(converation_id) -> List[Message]:
             l.append(r)
     return l
 
+def update_user(user: User) -> None:
+    with Session(engine) as session:
+        session.add(user)
+        session.commit()
+        session.refresh(user)
 
 # def get_worklists(user_id=1):
 #     with Session(engine) as session:
@@ -217,6 +222,8 @@ if __name__ == "__main__":  #
     now = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")
     # create_message("me@you.com","how are you doing",str(now),2)
     me = get_users()
+    for u in me:
+        print(u)
     print(get_group_member())
     print(get_conversations())
     print(get_all_messages())
