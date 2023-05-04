@@ -1,5 +1,3 @@
-import pathlib
-from datetime import date
 import datetime
 from typing import Optional, List  #
 
@@ -52,7 +50,7 @@ class Conversation(SQLModel, table=True):  #
 class GroupMember(SQLModel, table=True):  #
     id: Optional[int] = Field(default=None, primary_key=True)  #
     user_id: Optional[int] = Column(Integer, ForeignKey("user.id"))
-    conversation_id: Optional[int] = Column(Integer, ForeignKey("conversation.id"))
+    conversation_id: Optional[int] = Column(Integer, ForeignKey("conversation.id", ondelete="CASCADE"))
     # join_date: str
     # left_date: str
 
@@ -62,7 +60,7 @@ class Message(SQLModel, table=True):
     from_email: str
     message_text: str
     sent_date: str
-    conversation_id: Optional[int] = Column(Integer, ForeignKey("conversation.id"))
+    conversation_id: Optional[int] = Column(Integer, ForeignKey("conversation.id", ondelete="CASCADE"))
 
 
 ### Function Definitions ###
@@ -140,19 +138,13 @@ def get_messages(converation_id) -> List[Message]:
             l.append(r)
     return l
 
+
 def update_user(user: User) -> None:
     with Session(engine) as session:
         session.add(user)
         session.commit()
         session.refresh(user)
 
-# def get_worklists(user_id=1):
-#     with Session(engine) as session:
-#         return list(session.query(Worklist).where(Worklist.user_id == user_id))
-
-# def get_tasks(worklist_id=1):
-#     with Session(engine) as session:
-#         return list(session.query(Task).where(Task.worklist_id == worklist_id))
 
 def update_entity(entity):
     with Session(engine) as session:
@@ -176,6 +168,15 @@ def get_entity_by_email(model: SQLModel, email):
             return m
 
 
+# Get user by email and password
+def get_entity_by_email_and_password(model: SQLModel, email, password):
+    with Session(engine) as session:
+        statement = select(model).where(model.email == email).where(model.password == password)
+        me = session.exec(statement)
+        for m in me:
+            return m
+
+
 def get_group_userid_conversationid(user_id, conversation_id):
     with Session(engine) as session:
         statement = select(GroupMember).where(
@@ -193,6 +194,26 @@ def get_conv_by_name(model: SQLModel, conversation_name: str):
             return m
 
 
+def delete_from_grop(conv_id) -> None:
+    with Session(engine) as session:
+        statement = select(GroupMember).where(GroupMember.conversation_id == conv_id)
+        res = session.exec(statement).all()
+
+        if res is not None:
+            for r in res:
+                session.delete(r)
+            session.commit()
+
+
+def delete_conversation(conv_name: str) -> None:
+    with Session(engine) as session:
+        conv = get_conv_by_name(Conversation, conv_name)
+        delete_from_grop(conv.id)
+        if conv is not None:
+            session.delete(conv)
+            session.commit()
+
+
 def delete_entity(entity):
     with Session(engine) as session:
         session.delete(entity)
@@ -203,6 +224,8 @@ def create_fake_data():
     """Insert your fake data in here"""
     create_user("Ebenezer", "Frimpong", "you@me.com", "1234")
     create_user("Frimpong", "Ebenezer", "me@you.com", "1234")
+    create_user("Country", "Music", "c@you.com", "1234")
+    create_user("Amma", "Amponsah", "a@you.com", "1234")
     create_conversation("We")
     create_conversation("Me")
     create_group_message(1, 1)
@@ -218,13 +241,12 @@ def create_db_and_tables():  #
 
 # Create tables and fake data by: python -m todolist.db
 if __name__ == "__main__":  #
-    # create_db_and_tables()  #
-    now = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")
-    # create_message("me@you.com","how are you doing",str(now),2)
-    me = get_users()
-    for u in me:
-        print(u)
+    # create_db_and_tables()
+    # now = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")
+    # create_message("you@me.com", "how are you doing", str(now), 1)
+    # me = get_users()
+    # for u in me:
+    #     print(u)
     print(get_group_member())
     print(get_conversations())
     print(get_all_messages())
-
