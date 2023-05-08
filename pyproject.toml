@@ -10,7 +10,12 @@ dependencies = [
     "sqlmodel==0.0.8",
     "textual[dev]==0.19.1",
     "click",
-    "prompt_toolkit"
+    "prompt_toolkit",
+    "colorama",
+    "playsound==1.2.2",
+    "pyaudio",
+    "pydub",
+    "ffmpeg-python"
 ]
 
 [project.scripts]
